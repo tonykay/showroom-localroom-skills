@@ -1,0 +1,15 @@
+2024-03-15 08:23:41 ERROR [sshd] Failed password for invalid user admin from 192.168.1.45 port 22
+2024-03-15 08:24:02 ERROR [dnf] Error: Failed to download metadata for repo 'appstream': Cannot prepare internal mirrorlist: No URLs in mirrorlist
+2024-03-15 08:24:15 ERROR [kubelet] E0315 08:24:15.432109 1234 pod_workers.go:918] "Error syncing pod" err="failed to create sandbox: rpc error: code = Unknown desc = failed to start sandbox container" pod="default/web-app-7d4f8b6c9-x2k4m"
+2024-03-15 08:25:33 ERROR [ansible] fatal: [webserver01]: FAILED! => {"changed": false, "msg": "No package matching 'httpd-2.4.99' found available, installed or updated", "rc": 126}
+2024-03-15 08:26:01 ERROR [selinux] SELinux is preventing /usr/sbin/httpd from read access on the file /var/www/html/app/config.yml. sealert -l 8a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+2024-03-15 08:26:44 ERROR [kubelet] E0315 08:26:44.891234 1234 kuberuntime_manager.go:801] container "nginx" in pod "frontend-5f8d9c7b2-km3np" is not ready: CrashLoopBackOff
+2024-03-15 08:27:12 ERROR [ansible] fatal: [db-server]: UNREACHABLE! => {"changed": false, "msg": "Failed to connect to the host via ssh: ssh: connect to host db-server port 22: Connection timed out", "unreachable": true}
+2024-03-15 08:28:05 ERROR [systemd] user@1001.service: Failed to set up mount namespacing: /run/user/1001: No such file or directory
+2024-03-15 08:28:33 ERROR [kubernetes] error: unable to retrieve pod logs: the server could not find the requested resource (get pods api-gateway-6c8d9f7b3-j2k4m)
+2024-03-15 08:29:01 ERROR [dnf] Error: GPG check FAILED for package kernel-5.14.0-362.el9.x86_64
+2024-03-15 08:29:45 ERROR [ansible] fatal: [loadbalancer]: FAILED! => {"changed": false, "module_stderr": "sudo: a password is required\n", "msg": "MODULE FAILURE"}
+2024-03-15 08:30:22 ERROR [kubelet] E0315 08:30:22.123456 5678 event.go:267] "Error getting node" err="node 'worker-03' not found"
+2024-03-15 08:31:15 ERROR [selinux] SELinux is preventing /usr/bin/python3 from write access on the directory /opt/app/data. Was caused by a missing type transition rule.
+2024-03-15 08:32:01 ERROR [systemd] Failed to start firewalld.service: Unit firewalld.service not found.
+2024-03-15 08:32:44 ERROR [kubernetes] error: error validating "deployment.yaml": error validating data: ValidationError(Deployment.spec.template.spec.containers[0]): unknown field "port" in io.k8s.api.core.v1.Container
