@@ -7,13 +7,13 @@
 - [x] 01-overview.adoc -- business scenario and learning objectives
 - [x] 02-details.adoc -- technical requirements and setup
 - [x] 03-module-01-what-are-skills.adoc
-- [ ] 04-module-02-anatomy-of-a-skill.adoc
-- [ ] 05-module-03-build-error-classifier.adoc
-- [ ] 06-module-04-build-sre-linux.adoc
-- [ ] 07-module-05-build-sre-kubernetes.adoc
-- [ ] 08-module-06-distribution-and-portability.adoc
-- [ ] 09-conclusion.adoc -- resources and next steps
-- [ ] nav.adoc -- update navigation
+- [x] 04-module-02-anatomy-of-a-skill.adoc
+- [x] 05-module-03-build-error-classifier.adoc
+- [x] 06-module-04-build-sre-linux.adoc
+- [x] 07-module-05-build-sre-kubernetes.adoc
+- [x] 08-module-06-distribution-and-portability.adoc
+- [x] 09-conclusion.adoc -- resources and next steps
+- [x] nav.adoc -- update navigation
 
 ## Decisions Made
 

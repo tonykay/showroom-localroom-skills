@@ -1,0 +1,150 @@
+= Resources and next steps
+:source-highlighter: rouge
+:toc: macro
+:toclevels: 1
+
+You started this workshop with a wall of mixed errors and no automated way to triage them. Now DevCorp's SRE team has a working pipeline that classifies, routes, and diagnoses infrastructure errors -- all built from portable markdown files.
+
+Let's recap what you accomplished and where to go from here.
+
+== What you built
+
+Over six modules, you created a complete error triage pipeline:
+
+[cols="1,1,2",options="header"]
+|===
+|Skill |Type |What it does
+
+|`error-classifier`
+|Classifier
+|Reads mixed error logs and sorts each line into Linux, Ansible, or Kubernetes
+
+|`sre-linux`
+|Diagnostician
+|Deep root cause analysis for Linux errors (SSH, dnf, SELinux, systemd)
+
+|`sre-kubernetes`
+|Diagnostician
+|Deep root cause analysis for Kubernetes errors (pods, nodes, YAML validation)
+|===
+
+These three skills compose into a pipeline:
+
+[source]
+----
+Mixed errors → error-classifier → sre-linux / sre-kubernetes → Actionable diagnosis
+----
+
+== Learning outcomes checkpoint
+
+Review what you can now do:
+
+[cols="1,3",options="header"]
+|===
+|Module |What you learned
+
+|**Module 1**
+|What agent skills are, why they're an open standard, and when to choose them over MCP servers or /slash commands
+
+|**Module 2**
+|How skill files are structured -- from simple markdown instructions to complex multi-step workflows with frontmatter
+
+|**Module 3**
+|How to build a working skill, test it against real data, and refine it iteratively
+
+|**Module 4**
+|How to encode tribal knowledge as diagnostic workflows with decision trees and remediation steps
+
+|**Module 5**
+|How to apply an established skill pattern to a new domain quickly
+
+|**Module 6**
+|How to distribute skills via project scope, understand shadowing, and leverage portability
+|===
+
+== The DevCorp story -- resolved
+
+Remember the 3am page? Here's how it plays out now:
+
+**Before skills:**
+
+. SRE opens the incident channel, sees 50 mixed errors
+. Spends 15 minutes manually scanning to figure out which systems are affected
+. Starts diagnosing from memory, checks a wiki page that hasn't been updated in 6 months
+. Escalates to a senior engineer who's asleep
+. MTTR: 45 minutes to first meaningful action
+
+**After skills:**
+
+. SRE runs the error-classifier -- instant categorization in seconds
+. Routes Linux errors to sre-linux, Kubernetes errors to sre-kubernetes
+. Gets specific diagnostic commands and remediation steps immediately
+. Takes action without escalation -- the senior engineer's knowledge is in the skill
+. MTTR: 5 minutes to first meaningful action
+
+That's the power of encoding expertise as portable, reusable skills.
+
+== Resources
+
+=== Essential reading
+
+* link:https://docs.anthropic.com/en/docs/claude-code/skills[Claude Code Skills documentation^] -- Official reference for skill file structure, scopes, and best practices
+
+* link:https://resources.anthropic.com/hubfs/The-Complete-Guide-to-Building-Skill-for-Claude.pdf?hsLang=en%20(2)[The Complete Guide to Building Skills for Claude^] -- Comprehensive PDF guide covering everything from basics to advanced patterns
+
+=== Ecosystem
+
+* link:https://agenticskills.dev/[Agentic Skills^] -- Community marketplace for discovering and sharing skills
+
+=== Frameworks supporting skills
+
+* link:https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/claude-code-sdk-reference[Claude Code SDK^] -- Build custom workflows that leverage skills programmatically
+
+* link:https://docs.anthropic.com/en/docs/agents-and-tools/agent-sdk[Claude Agents SDK^] -- Build custom agents that load skills as instruction sets
+
+== Next steps
+
+Here are paths to continue your skills journey:
+
+=== Build more skills
+
+Apply the patterns you learned to your own domain:
+
+* **Incident responder** -- Encode your team's incident response playbook
+* **Code reviewer** -- Capture your team's code review standards and common issues
+* **Migration assistant** -- Document complex migration procedures step by step
+* **Compliance checker** -- Encode regulatory requirements as diagnostic checklists
+
+=== Advance your skill design
+
+* **Arguments and variables** -- Make skills accept input parameters for flexibility
+* **Multi-file skills** -- Reference external files for large knowledge bases
+* **Skill orchestration** -- Build skills that coordinate other skills
+* **Testing frameworks** -- Create systematic test suites for skill accuracy
+
+=== Contribute to the ecosystem
+
+* Publish useful skills to link:https://agenticskills.dev/[agenticskills.dev^]
+* Share domain-specific skills with your team and community
+* Contribute to the open standard as it evolves
+
+== Clean up (optional)
+
+If you'd like to remove the workshop skills from your personal directory:
+
+[source,role="execute"]
+----
+# Remove personal copies (project copies in .claude/commands/ remain)
+rm -f ~/.claude/commands/error-classifier.md
+rm -f ~/.claude/commands/sre-linux.md
+rm -f ~/.claude/commands/sre-kubernetes.md
+echo "Personal skill copies removed"
+----
+
+Or keep them -- they're yours to use and modify.
+
+== Thank you
+
+You've gone from understanding what skills are to building a production-ready diagnostic pipeline. The skills you created are portable, maintainable, and encode real expertise that makes your whole team more effective.
+
+The best skill is the one that captures knowledge that would otherwise be lost. Start building.

@@ -1,0 +1,276 @@
+= Module 6: Distribution and portability
+:source-highlighter: rouge
+:toc: macro
+:toclevels: 1
+
+You've built three working skills. They live in your personal `~/.claude/commands/` directory -- which means they're yours alone. But DevCorp has 40 SREs across three time zones. How do you get the error triage pipeline into everyone's hands?
+
+This module covers the practical side of skills: where they live, how scope works, what happens when skills collide, and why portability as an open standard matters for your investment.
+
+== Learning objectives
+
+By the end of this module, you'll be able to:
+
+* Explain the different scopes where skills can live
+* Resolve skill name conflicts (shadow skills)
+* Share skills through repositories and marketplaces
+* Describe how skills port to other agentic frameworks
+
+== Skill scope -- where skills live
+
+Skills can live in three places, each with different visibility:
+
+[cols="1,2,2",options="header"]
+|===
+|Scope |Location |Who can use it
+
+|**Personal**
+|`~/.claude/commands/`
+|Only you -- across all projects
+
+|**Project**
+|`.claude/commands/` (in repo root)
+|Anyone who clones the repo
+
+|**Marketplace**
+|External registries (e.g., link:https://agenticskills.dev[agenticskills.dev^])
+|Anyone who installs from the marketplace
+|===
+
+=== Exercise 1: Move a skill to project scope
+
+Right now your skills are personal. Let's make `error-classifier` available to anyone who clones the DevCorp repo.
+
+. Create the project-level skills directory:
++
+[source,role="execute"]
+----
+mkdir -p .claude/commands
+----
+
+. Copy the error-classifier to project scope:
++
+[source,role="execute"]
+----
+cp ~/.claude/commands/error-classifier.md .claude/commands/error-classifier.md
+----
+
+. Verify the skill exists in both locations:
++
+[source,role="execute"]
+----
+echo "Personal:" && ls ~/.claude/commands/error-classifier.md 2>/dev/null
+echo "Project:" && ls .claude/commands/error-classifier.md 2>/dev/null
+----
+
+. Test the project-scoped skill:
++
+[source,role="execute"]
+----
+claude "/error-classifier classify errors in assets/sample-logs/mixed-errors.log"
+----
+
+=== Verify
+
+The skill should work identically from project scope. Anyone who clones this repo now gets the error-classifier automatically.
+
+== Shadow skills -- when names collide
+
+What happens when you have a personal skill and a project skill with the same name? This is called **shadowing**.
+
+**The rule**: Project-scoped skills take precedence over personal skills.
+
+Here's why that matters:
+
+[source]
+----
+~/.claude/commands/error-classifier.md     ← Your personal version
+.claude/commands/error-classifier.md       ← Project version (WINS)
+----
+
+If Tony has a personal `error-classifier` and the repo also has one, the repo version is what runs. This prevents personal customizations from silently overriding team standards.
+
+=== Exercise 2: See shadowing in action
+
+. Check which skill would run if both exist:
++
+[source,role="execute"]
+----
+echo "=== Personal skills ===" && ls ~/.claude/commands/*.md 2>/dev/null
+echo ""
+echo "=== Project skills ===" && ls .claude/commands/*.md 2>/dev/null
+----
+
+. Understand the implications:
++
+* **Personal skills**: Good for experiments, personal preferences, and skills that don't need to be shared
+* **Project skills**: Good for team standards, repo-specific workflows, and enforcing consistency
+* **Conflict resolution**: Project always wins -- if you need to override, rename your personal copy
+
+TIP: Use personal scope for prototyping and project scope for production. Once a skill proves its value, promote it from `~/.claude/commands/` to `.claude/commands/`.
+
+== Sharing skills with the team
+
+DevCorp's SRE team needs all three skills. Here are the distribution options:
+
+=== Option 1: In-repo skills
+
+Commit skills directly to the repository:
+
+[source,role="execute"]
+----
+# Copy all skills to project scope
+cp ~/.claude/commands/sre-linux.md .claude/commands/
+cp ~/.claude/commands/sre-kubernetes.md .claude/commands/
+
+# Verify
+ls -la .claude/commands/
+----
+
+**When to use in-repo distribution:**
+
+* The skills are specific to this project or team
+* The repo is the single source of truth
+* You want version control for skill changes (diffs, blame, PRs)
+* Skills should be available immediately on clone
+
+**When NOT to use in-repo:**
+
+* The skills are generic utilities useful across many projects
+* The repo is a template that gets forked -- skills will drift and atrophy in forks
+* Skills need to be updated independently of the project release cycle
+
+=== Option 2: Marketplaces
+
+The emerging ecosystem for sharing skills includes registries like link:https://agenticskills.dev[agenticskills.dev^] where you can publish and discover community skills.
+
+**What marketplaces offer:**
+
+* Discoverability -- find skills others have built
+* Versioning -- install specific versions
+* Quality signals -- ratings, usage stats, reviews
+* Composability -- build on established skills
+
+=== Option 3: Documentation and manual sharing
+
+For smaller teams, sometimes the simplest approach works:
+
+* Share the `.md` file via Slack, email, or internal wiki
+* Include installation instructions: "Save this file to `~/.claude/commands/`"
+* No infrastructure required
+
+== Portability -- the open standard advantage
+
+Skills aren't locked to Claude Code. Because they're markdown-based with a well-defined structure, they work across the growing agentic ecosystem.
+
+=== Where skills run today
+
+[cols="1,3",options="header"]
+|===
+|Framework |How skills are consumed
+
+|**Claude Code**
+|Loaded from `~/.claude/commands/` or `.claude/commands/`
+
+|**Claude Agents SDK**
+|Loaded programmatically as agent instructions
+
+|**LangChain Deep Agents**
+|Parsed as markdown instruction sets for agent configuration
+
+|**Custom harnesses**
+|Any tool that can parse markdown frontmatter + instructions
+|===
+
+=== Why this matters for DevCorp
+
+The skills you built today work in Claude Code. Tomorrow, if DevCorp builds a custom agent using the Claude Agents SDK, those same skill files can be loaded directly -- no rewrite needed.
+
+[source]
+----
+# Same skill file, different runtime
+┌──────────────────────┐
+│  error-classifier.md │
+│  sre-linux.md        │──→ Claude Code (today)
+│  sre-kubernetes.md   │──→ Claude Agents SDK (tomorrow)
+│                      │──→ LangChain (next quarter)
+└──────────────────────┘
+----
+
+This is the open standard advantage: **invest once, deploy everywhere**.
+
+=== Exercise 3: Review your skill portfolio
+
+Take stock of what you've built and where each skill should live:
+
+. List all your skills:
++
+[source,role="execute"]
+----
+echo "=== Personal skills ===" && ls ~/.claude/commands/*.md 2>/dev/null
+echo ""
+echo "=== Project skills ===" && ls .claude/commands/*.md 2>/dev/null
+----
+
+. For each skill, decide the right scope:
++
+[cols="1,1,2",options="header"]
+|===
+|Skill |Recommended scope |Why
+
+|`error-classifier`
+|Project
+|Team standard -- everyone should use the same classification rules
+
+|`sre-linux`
+|Project
+|Team knowledge -- diagnostic procedures should be consistent
+
+|`sre-kubernetes`
+|Project
+|Team knowledge -- same reasoning as sre-linux
+|===
+
+. Ensure all three are in project scope:
++
+[source,role="execute"]
+----
+# Copy any missing skills to project scope
+for skill in error-classifier sre-linux sre-kubernetes; do
+  if [ ! -f ".claude/commands/${skill}.md" ]; then
+    cp ~/.claude/commands/${skill}.md .claude/commands/
+    echo "Copied ${skill} to project scope"
+  else
+    echo "${skill} already in project scope"
+  fi
+done
+----
+
+=== Verify
+
+Check that:
+
+* All three skills exist in `.claude/commands/`
+* You understand the shadowing rules (project beats personal)
+* You can articulate when to use in-repo vs marketplace distribution
+* You know that skills are portable beyond Claude Code
+
+== Module summary
+
+**What you accomplished for DevCorp:**
+
+* Distributed the triage pipeline to the team via project-scoped skills
+* Understood how skill shadowing prevents conflicts
+* Made an informed decision about distribution strategy
+* Recognized the long-term value of skills as an open standard
+
+**Business impact realized:**
+
+* **Team-wide deployment**: All 40 SREs get the triage pipeline by cloning the repo
+* **Consistency**: Project scope ensures everyone runs the same version
+* **Future-proofing**: Skills port to whatever agentic framework DevCorp adopts next
+* **Low maintenance**: No servers, no infrastructure, no runtime dependencies
+
+**Next steps:**
+
+The conclusion wraps up your journey with resources, next steps, and a look at where the skills ecosystem is headed.

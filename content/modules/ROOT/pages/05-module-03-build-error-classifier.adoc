@@ -1,0 +1,212 @@
+= Module 3: Build error-classifier
+:source-highlighter: rouge
+:toc: macro
+:toclevels: 1
+
+The DevCorp SRE team needs to stop wasting time figuring out *what kind* of error they're looking at before they can start fixing it. Your first skill will automate that classification step -- reading a mixed error log and sorting each line into Linux, Ansible, or Kubernetes categories.
+
+This is the foundation of the triage pipeline. Get this right, and everything else builds on top.
+
+== Learning objectives
+
+By the end of this module, you'll be able to:
+
+* Create a skill file with proper frontmatter and structured instructions
+* Write clear classification logic as natural language rules
+* Test a skill against sample data using Claude Code
+* Validate skill output for accuracy
+
+== Exercise 1: Create the skill file
+
+You'll create the `error-classifier` skill in your personal skills directory.
+
+. Create the skills directory if it doesn't exist:
++
+[source,role="execute"]
+----
+mkdir -p ~/.claude/commands
+----
+
+. Create the skill file:
++
+[source,role="execute"]
+----
+cat > ~/.claude/commands/error-classifier.md << 'SKILL'
+---
+name: error-classifier
+description: Classifies errors from mixed log files as Linux, Ansible, or Kubernetes
+---
+
+# Error Classifier
+
+Analyze a log file containing mixed infrastructure errors and classify each error line
+into one of three categories: **Linux**, **Ansible**, or **Kubernetes**.
+
+## Classification rules
+
+### Linux errors
+Identify by these patterns:
+- `[sshd]` -- SSH authentication failures
+- `[dnf]` or `[yum]` -- Package manager errors
+- `[selinux]` -- SELinux access denials (look for "SELinux is preventing")
+- `[systemd]` -- Service management failures
+- Permission denied errors related to filesystem or users
+
+### Ansible errors
+Identify by these patterns:
+- `[ansible]` -- Direct Ansible module failures
+- `fatal:` with `FAILED!` or `UNREACHABLE!` -- Ansible play failures
+- `MODULE FAILURE` -- Ansible module execution errors
+- References to playbooks, tasks, or roles
+
+### Kubernetes errors
+Identify by these patterns:
+- `[kubelet]` -- Kubelet process errors
+- `[kubernetes]` -- Kubernetes API errors
+- Pod-related errors: CrashLoopBackOff, ImagePullBackOff, Error syncing pod
+- Node errors: node not found, node not ready
+- YAML validation errors for Kubernetes resources (Deployment, Service, Pod specs)
+
+## Output format
+
+For each error line, output:
+
+```
+[CATEGORY] original error line
+```
+
+Then provide a summary count:
+- Linux errors: N
+- Ansible errors: N
+- Kubernetes errors: N
+- Total: N
+
+## Example
+
+Input:
+```
+2024-03-15 08:24:02 ERROR [dnf] Error: Failed to download metadata
+2024-03-15 08:26:44 ERROR [kubelet] container "nginx" is not ready: CrashLoopBackOff
+```
+
+Output:
+```
+[LINUX] 2024-03-15 08:24:02 ERROR [dnf] Error: Failed to download metadata
+[KUBERNETES] 2024-03-15 08:26:44 ERROR [kubelet] container "nginx" is not ready: CrashLoopBackOff
+
+Summary:
+- Linux errors: 1
+- Ansible errors: 0
+- Kubernetes errors: 1
+- Total: 2
+```
+SKILL
+----
+
+=== Verify
+
+Confirm the skill file was created:
+
+[source,role="execute"]
+----
+cat ~/.claude/commands/error-classifier.md | head -5
+----
+
+You should see the frontmatter with `name: error-classifier`.
+
+== Exercise 2: Test against sample data
+
+Now test your skill against the mixed error log included in this workshop.
+
+. First, look at the sample log to understand what you're working with:
++
+[source,role="execute"]
+----
+cat assets/sample-logs/mixed-errors.log
+----
++
+You should see 15 error lines from mixed sources -- sshd, dnf, kubelet, ansible, selinux, systemd, and kubernetes.
+
+. Run the error-classifier skill against the log:
++
+[source,role="execute"]
+----
+claude "/error-classifier classify the errors in assets/sample-logs/mixed-errors.log"
+----
+
+. Review the output. The classifier should identify:
++
+* **Linux errors** (6): sshd, dnf (x2), selinux (x2), systemd (x2)
+* **Ansible errors** (3): package not found, unreachable host, sudo password
+* **Kubernetes errors** (4): pod sync, crashloop, node not found, pod logs, YAML validation
++
+NOTE: The exact count may vary slightly depending on how edge cases are classified. The important thing is that the classifier correctly identifies the *source system* for each error.
+
+=== Verify
+
+Check that:
+
+* Every error line received a classification
+* No errors were missed or left unclassified
+* The summary count matches the classified lines
+* Linux, Ansible, and Kubernetes errors are correctly separated
+
+== Exercise 3: Refine the skill
+
+Real-world skills improve through iteration. Let's refine the classifier based on what you observed.
+
+. If any errors were misclassified, update the classification rules:
++
+[source,role="execute"]
+----
+# Open the skill in your editor and adjust rules as needed
+# For example, if systemd errors were missed:
+${EDITOR:-vi} ~/.claude/commands/error-classifier.md
+----
+
+. Re-run against the sample log to verify improvements:
++
+[source,role="execute"]
+----
+claude "/error-classifier classify the errors in assets/sample-logs/mixed-errors.log"
+----
+
+. Try the skill with a different prompt to test flexibility:
++
+[source,role="execute"]
+----
+claude "/error-classifier how many kubernetes errors are in assets/sample-logs/mixed-errors.log?"
+----
+
+TIP: Good skills handle variation in how users phrase requests. The description and instructions should be broad enough to handle natural language variations while staying focused on the core task.
+
+== How the skill works -- a closer look
+
+Let's break down what makes this skill effective:
+
+**Frontmatter**: The `description` field tells Claude when to activate -- any time someone asks about classifying or categorizing errors.
+
+**Classification rules**: Written as natural language patterns, not regex. The agent interprets these flexibly, which means it can handle variations in log formats that rigid pattern matching would miss.
+
+**Output format**: Specifying the exact output structure ensures consistent, parseable results. This matters when the next skill in the pipeline needs to consume the output.
+
+**Examples**: The included example serves as a "few-shot" demonstration, showing the agent exactly what good output looks like.
+
+== Module summary
+
+**What you accomplished for DevCorp:**
+
+* Built a working `error-classifier` skill that automates the first triage step
+* Tested it against realistic mixed infrastructure logs
+* Refined the skill based on real output -- the iterative improvement loop
+* Established the pattern for all future skills in the pipeline
+
+**Business impact realized:**
+
+* **Triage speed**: Errors classified in seconds instead of manual scanning
+* **Consistency**: Every SRE gets the same classification, every time
+* **Foundation**: The classifier output feeds directly into specialized diagnostic skills
+
+**Next steps:**
+
+Module 4 builds the `sre-linux` skill -- a specialized diagnostician that takes Linux errors from the classifier and provides deep analysis using your team's tribal knowledge.

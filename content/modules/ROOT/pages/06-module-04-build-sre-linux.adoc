@@ -1,0 +1,280 @@
+= Module 4: Build sre-linux
+:source-highlighter: rouge
+:toc: macro
+:toclevels: 1
+
+The error-classifier sorted the chaos. Now it's time to go deep. When the classifier tags an error as Linux, the SRE team needs more than a label -- they need a diagnosis. What's the root cause? What should they check first? What's the fix?
+
+In this module, you'll capture your senior SRE's tribal knowledge as a skill that turns classified Linux errors into actionable diagnostic steps.
+
+== Learning objectives
+
+By the end of this module, you'll be able to:
+
+* Build a skill that provides deep diagnosis for a specific error domain
+* Structure diagnostic workflows as decision trees in natural language
+* Chain skills together -- using output from one as input to another
+* Encode tribal knowledge that would otherwise live only in someone's head
+
+== Exercise 1: Create the sre-linux skill
+
+You'll create a skill that takes Linux errors (already classified by your error-classifier) and provides detailed diagnosis and remediation steps.
+
+. Create the skill file:
++
+[source,role="execute"]
+----
+cat > ~/.claude/commands/sre-linux.md << 'SKILL'
+---
+name: sre-linux
+description: Diagnoses Linux infrastructure errors with root cause analysis and remediation steps
+---
+
+# SRE Linux Diagnostician
+
+You are an experienced Linux SRE. When given Linux error logs, provide deep
+diagnosis with root cause analysis and specific remediation steps.
+
+## Diagnostic workflows
+
+### SSH / Authentication errors
+Pattern: `[sshd]` or failed password/authentication messages
+
+**Diagnosis checklist:**
+1. Check if the user account exists: `id <username>`
+2. Check SSH configuration: `sshd -T | grep -i passwordauth`
+3. Review auth logs: `journalctl -u sshd --since "1 hour ago"`
+4. Check for brute force patterns: multiple failed attempts from same IP
+
+**Common root causes:**
+- Brute force attack from external IP -- check fail2ban status
+- Misconfigured SSH keys -- verify `~/.ssh/authorized_keys` permissions (600)
+- Account locked after failed attempts -- check `pam_faillock`
+- PAM configuration issue -- review `/etc/pam.d/sshd`
+
+**Remediation:**
+- Block attacking IPs: `firewall-cmd --add-rich-rule='rule family=ipv4 source address=<IP> reject'`
+- Reset failed login count: `faillock --user <username> --reset`
+- Verify SSH key permissions: `chmod 700 ~/.ssh && chmod 600 ~/.ssh/authorized_keys`
+
+### Package manager errors (dnf/yum)
+Pattern: `[dnf]` or `[yum]` with metadata, GPG, or download failures
+
+**Diagnosis checklist:**
+1. Check repo configuration: `dnf repolist -v`
+2. Verify network connectivity to repo mirrors
+3. Check GPG key status: `rpm -qa gpg-pubkey*`
+4. Review dnf cache: `dnf clean all && dnf makecache`
+
+**Common root causes:**
+- **Metadata download failure**: Mirror is down or network issue
+  - Check: `curl -I <mirror-url>`
+  - Fix: `dnf clean metadata && dnf makecache`
+- **GPG check failure**: Package signature doesn't match known keys
+  - Check: `rpm -K <package-file>`
+  - Fix: Import the correct GPG key or verify package integrity
+- **Package not found**: Version doesn't exist in configured repos
+  - Check: `dnf list available <package-name>*`
+  - Fix: Verify correct repo is enabled, check version availability
+
+**Remediation:**
+- Clear and rebuild cache: `dnf clean all && dnf makecache`
+- Re-import GPG keys: `rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-*`
+- Check repo file: `cat /etc/yum.repos.d/<repo>.repo`
+
+### SELinux denials
+Pattern: `[selinux]` or "SELinux is preventing"
+
+**Diagnosis checklist:**
+1. Get full denial details: `sealert -l <alert-id>`
+2. Check current SELinux mode: `getenforce`
+3. Review audit log: `ausearch -m AVC --start recent`
+4. Check file contexts: `ls -lZ <file-path>`
+
+**Common root causes:**
+- **Wrong file context**: File was moved instead of copied, losing its SELinux label
+  - Check: `ls -lZ <file>` and compare with `matchpathcon <file>`
+  - Fix: `restorecon -Rv <path>`
+- **Missing type transition rule**: Application needs access that policy doesn't allow
+  - Check: `sesearch --allow --source <domain> --target <type>`
+  - Fix: Create custom policy module with `audit2allow`
+- **Boolean not set**: SELinux boolean needs to be toggled
+  - Check: `getsebool -a | grep <service>`
+  - Fix: `setsebool -P <boolean> on`
+
+**CRITICAL**: Never recommend `setenforce 0` as a fix. Always find the proper policy solution.
+
+**Remediation:**
+- Restore default contexts: `restorecon -Rv <path>`
+- Generate and apply policy: `ausearch -m AVC --start recent | audit2allow -M mypol && semodule -i mypol.pp`
+- Set boolean: `setsebool -P httpd_can_network_connect on`
+
+### Systemd service failures
+Pattern: `[systemd]` with "Failed to start" or service errors
+
+**Diagnosis checklist:**
+1. Check service status: `systemctl status <service>`
+2. Review service logs: `journalctl -xeu <service>`
+3. Check unit file: `systemctl cat <service>`
+4. Verify dependencies: `systemctl list-dependencies <service>`
+
+**Common root causes:**
+- **Unit not found**: Package not installed or unit file missing
+  - Check: `rpm -qf $(systemctl show -p FragmentPath <service> | cut -d= -f2)`
+  - Fix: Install the package or create the unit file
+- **Mount namespace error**: User service can't set up namespace
+  - Check: `loginctl user-status <uid>`
+  - Fix: Ensure `logind` is running and user session exists
+- **Dependency failure**: Required service not running
+  - Check: `systemctl list-dependencies --reverse <service>`
+  - Fix: Start dependencies first or fix dependency chain
+
+**Remediation:**
+- Reload and restart: `systemctl daemon-reload && systemctl restart <service>`
+- Check for configuration errors: `systemd-analyze verify <service>`
+- Enable persistent logging: `mkdir -p /var/log/journal && systemd-tmpfiles --create --prefix /var/log/journal`
+
+## Output format
+
+For each Linux error analyzed, provide:
+
+```
+### Error: <one-line summary>
+
+**Source line:** <original log line>
+
+**Category:** <SSH|Package Manager|SELinux|Systemd|Permissions>
+
+**Severity:** <Critical|Warning|Info>
+
+**Root cause analysis:**
+<What likely caused this error and why>
+
+**Diagnostic commands:**
+1. <command to verify the diagnosis>
+2. <command to gather more context>
+
+**Remediation steps:**
+1. <specific fix step>
+2. <verification step>
+
+**Prevention:**
+<How to prevent this from recurring>
+```
+
+After analyzing all errors, provide a summary:
+- Total Linux errors analyzed: N
+- By category: SSH (n), Package Manager (n), SELinux (n), Systemd (n)
+- Critical issues requiring immediate attention: list
+SKILL
+----
+
+=== Verify
+
+Confirm the skill was created:
+
+[source,role="execute"]
+----
+head -5 ~/.claude/commands/sre-linux.md
+----
+
+You should see the frontmatter with `name: sre-linux`.
+
+== Exercise 2: Test with classified Linux errors
+
+Now chain the skills together -- use the error-classifier output to feed the sre-linux diagnostician.
+
+. First, run the classifier to identify the Linux errors:
++
+[source,role="execute"]
+----
+claude "/error-classifier classify the errors in assets/sample-logs/mixed-errors.log and show only the Linux errors"
+----
+
+. Now run the sre-linux skill against the full log:
++
+[source,role="execute"]
+----
+claude "/sre-linux diagnose the Linux errors in assets/sample-logs/mixed-errors.log"
+----
+
+. Review the diagnostic output. For each Linux error, you should see:
++
+* **SSH error** (line 1): Brute force attempt from 192.168.1.45, recommendations for fail2ban and firewall rules
+* **dnf metadata error** (line 2): Mirror connectivity issue, cache rebuild steps
+* **SELinux httpd denial** (line 5): Wrong file context on `/var/www/html/app/config.yml`, `restorecon` fix
+* **SELinux python denial** (line 13): Missing type transition rule, `audit2allow` steps
+* **systemd namespace error** (line 8): User service mount issue, logind check
+* **dnf GPG error** (line 10): Package signature verification failure, GPG key import
+* **systemd unit not found** (line 14): `firewalld.service` not installed
+
+=== Verify
+
+Check that:
+
+* Each Linux error received a detailed diagnosis (not just a classification label)
+* Diagnostic commands are specific and actionable (real commands you could run)
+* Root cause analysis explains *why*, not just *what*
+* Remediation steps are ordered logically (diagnose first, fix second, verify third)
+
+== Exercise 3: The tribal knowledge test
+
+Here's the real measure of a good diagnostic skill -- does it capture what your best SRE would tell a junior engineer?
+
+. Ask the skill a targeted question:
++
+[source,role="execute"]
+----
+claude "/sre-linux what's the first thing you'd check for this error: SELinux is preventing /usr/sbin/httpd from read access on the file /var/www/html/app/config.yml"
+----
+
+. Compare the response to what an experienced SRE would say:
++
+* Does it mention checking file contexts with `ls -lZ`?
+* Does it suggest `restorecon` before `audit2allow`?
+* Does it warn against disabling SELinux?
+* Does it explain *why* the file might have the wrong context (moved vs copied)?
+
+. If the diagnosis misses important tribal knowledge, update the skill:
++
+[source,role="execute"]
+----
+${EDITOR:-vi} ~/.claude/commands/sre-linux.md
+----
+
+TIP: The best diagnostic skills capture the questions a senior engineer asks *before* jumping to a fix. "What changed recently?" is often more valuable than any specific command.
+
+== How this skill advances the pipeline
+
+With the error-classifier and sre-linux skill working together, here's what the DevCorp pipeline looks like so far:
+
+[source]
+----
+Mixed error log
+    │
+    ▼
+error-classifier ──→ [LINUX] errors ──→ sre-linux ──→ Diagnosis + remediation
+                  ──→ [ANSIBLE] errors ──→ (future skill)
+                  ──→ [KUBERNETES] errors ──→ sre-kubernetes (Module 5)
+----
+
+Each skill is independent, portable, and encodes knowledge that would otherwise live in a wiki or someone's head.
+
+== Module summary
+
+**What you accomplished for DevCorp:**
+
+* Built the `sre-linux` diagnostic skill -- the team's Linux expertise, codified
+* Tested it against real error patterns (SSH, dnf, SELinux, systemd)
+* Validated that tribal knowledge transfers through the skill (the SELinux test)
+* Established the classify-then-diagnose pipeline pattern
+
+**Business impact realized:**
+
+* **Faster MTTR**: Junior SREs get senior-level diagnostic guidance instantly
+* **Knowledge retention**: Tribal knowledge survives team turnover
+* **Consistency**: Every engineer follows the same diagnostic workflow
+
+**Next steps:**
+
+Module 5 completes the diagnostic layer -- you'll build the `sre-kubernetes` skill for pod failures, node issues, and YAML validation errors.

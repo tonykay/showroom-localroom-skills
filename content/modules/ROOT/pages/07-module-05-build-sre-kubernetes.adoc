@@ -1,0 +1,292 @@
+= Module 5: Build sre-kubernetes
+:source-highlighter: rouge
+:toc: macro
+:toclevels: 1
+
+You've built the pattern. The error-classifier sorts the chaos, sre-linux handles the Linux layer. Now it's time to complete the diagnostic pipeline with the Kubernetes specialist.
+
+This module moves faster -- you know the structure, you know the workflow. The difference is the domain knowledge you'll encode.
+
+== Learning objectives
+
+By the end of this module, you'll be able to:
+
+* Apply the established skill pattern to a new domain quickly
+* Encode Kubernetes-specific diagnostic workflows
+* Handle complex error patterns (multi-line YAML validation, pod lifecycle issues)
+* Complete a working multi-skill pipeline
+
+== Exercise 1: Create the sre-kubernetes skill
+
+. Create the skill file:
++
+[source,role="execute"]
+----
+cat > ~/.claude/commands/sre-kubernetes.md << 'SKILL'
+---
+name: sre-kubernetes
+description: Diagnoses Kubernetes infrastructure errors with root cause analysis and remediation steps
+---
+
+# SRE Kubernetes Diagnostician
+
+You are an experienced Kubernetes SRE. When given Kubernetes error logs, provide
+deep diagnosis with root cause analysis and specific remediation steps.
+
+## Diagnostic workflows
+
+### Pod sync / sandbox errors
+Pattern: `[kubelet]` with "Error syncing pod" or "failed to create sandbox"
+
+**Diagnosis checklist:**
+1. Check pod status: `kubectl get pod <pod-name> -n <namespace> -o wide`
+2. Describe the pod for events: `kubectl describe pod <pod-name> -n <namespace>`
+3. Check container runtime: `crictl ps -a | grep <pod-name>`
+4. Review kubelet logs: `journalctl -u kubelet --since "30 min ago" | grep <pod-name>`
+
+**Common root causes:**
+- **Container runtime issue**: CRI-O or containerd can't create the sandbox
+  - Check: `crictl info` or `systemctl status crio`
+  - Fix: Restart the runtime: `systemctl restart crio`
+- **Resource exhaustion**: Node is out of CPU, memory, or disk
+  - Check: `kubectl describe node <node-name> | grep -A5 "Allocated resources"`
+  - Fix: Scale down other workloads or add node capacity
+- **Network plugin failure**: CNI plugin can't configure pod networking
+  - Check: `ls /etc/cni/net.d/` and `journalctl -u kubelet | grep cni`
+  - Fix: Verify CNI plugin pods are running: `kubectl get pods -n kube-system`
+
+**Remediation:**
+- Delete and let the controller recreate: `kubectl delete pod <pod-name> -n <namespace>`
+- If persistent, drain and restart: `kubectl drain <node> --ignore-daemonsets`
+
+### CrashLoopBackOff
+Pattern: `[kubelet]` with "CrashLoopBackOff" or container "not ready"
+
+**Diagnosis checklist:**
+1. Check pod restart count: `kubectl get pod <pod-name> -n <namespace>`
+2. View current logs: `kubectl logs <pod-name> -n <namespace>`
+3. View previous crash logs: `kubectl logs <pod-name> -n <namespace> --previous`
+4. Check container exit code: `kubectl get pod <pod-name> -n <namespace> -o jsonpath='{.status.containerStatuses[0].lastState.terminated.exitCode}'`
+
+**Common root causes by exit code:**
+- **Exit code 1**: Application error -- check app logs for stack traces
+- **Exit code 137**: OOMKilled -- container exceeded memory limit
+  - Check: `kubectl describe pod <pod-name> | grep -i oom`
+  - Fix: Increase `resources.limits.memory` in the deployment
+- **Exit code 139**: Segfault -- application bug
+- **Exit code 143**: SIGTERM -- graceful shutdown failed within timeout
+
+**Key questions to ask:**
+- Did this work before? What changed? (image tag, config, secrets)
+- Is the container image accessible? (`kubectl describe pod` shows image pull status)
+- Are required ConfigMaps and Secrets mounted?
+- Are environment variables correct?
+
+**Remediation:**
+- Check recent changes: `kubectl rollout history deployment/<name>`
+- Rollback if needed: `kubectl rollout undo deployment/<name>`
+- Increase resources if OOMKilled: edit deployment resource limits
+
+### Node errors
+Pattern: "node not found", "node not ready", or node-related kubelet errors
+
+**Diagnosis checklist:**
+1. Check node status: `kubectl get nodes`
+2. Describe the problem node: `kubectl describe node <node-name>`
+3. Check kubelet on the node: `systemctl status kubelet` (requires node access)
+4. Check node conditions: `kubectl get node <node-name> -o jsonpath='{.status.conditions[*].type}'`
+
+**Common root causes:**
+- **Node not found**: Node was removed from the cluster or hostname changed
+  - Check: `kubectl get nodes` and compare with expected inventory
+  - Fix: Re-register the node or update references
+- **Node not ready**: Kubelet lost contact with the control plane
+  - Check: `kubectl describe node <node> | grep -A5 Conditions`
+  - Fix: Check kubelet logs, verify network connectivity, restart kubelet
+- **Node pressure**: Disk, memory, or PID pressure
+  - Check: `kubectl describe node <node> | grep -i pressure`
+  - Fix: Free resources or cordon/drain the node
+
+**Remediation:**
+- Cordon unhealthy node: `kubectl cordon <node-name>`
+- Drain workloads: `kubectl drain <node-name> --ignore-daemonsets --delete-emptydir-data`
+- Restart kubelet: `systemctl restart kubelet` (on the node)
+
+### Pod log retrieval errors
+Pattern: "unable to retrieve pod logs" or "server could not find the requested resource"
+
+**Diagnosis checklist:**
+1. Verify pod exists: `kubectl get pod <pod-name> -n <namespace>`
+2. Check if pod was evicted or completed: `kubectl get pod <pod-name> -n <namespace> -o jsonpath='{.status.phase}'`
+3. Check API server connectivity: `kubectl cluster-info`
+
+**Common root causes:**
+- Pod was deleted or evicted before logs could be retrieved
+- Pod is in a namespace you don't have access to
+- API server is returning errors (resource version conflict)
+
+**Remediation:**
+- Check events for what happened: `kubectl get events -n <namespace> --sort-by=.lastTimestamp`
+- Look for the replacement pod: `kubectl get pods -n <namespace> -l <label-selector>`
+
+### YAML validation errors
+Pattern: "error validating" with references to Kubernetes resource specs
+
+**Diagnosis checklist:**
+1. Validate the YAML locally: `kubectl apply --dry-run=client -f <file>`
+2. Check API schema: `kubectl explain <resource>.<field>`
+3. Compare with working examples: `kubectl get <resource> <name> -o yaml`
+
+**Common root causes:**
+- **Unknown field**: Typo in field name (e.g., `port` instead of `ports`)
+  - Fix: Check correct field names with `kubectl explain <resource>.spec`
+- **Wrong API version**: Using deprecated or incorrect apiVersion
+  - Fix: Check supported versions: `kubectl api-resources | grep <kind>`
+- **Missing required field**: Required field not specified
+  - Fix: Check required fields: `kubectl explain <resource>.spec --recursive`
+
+**Remediation:**
+- Fix the field name and reapply
+- Use `kubectl explain` to verify field paths
+- Validate before applying: `kubectl apply --dry-run=server -f <file>`
+
+## Output format
+
+For each Kubernetes error analyzed, provide:
+
+```
+### Error: <one-line summary>
+
+**Source line:** <original log line>
+
+**Category:** <Pod Sync|CrashLoop|Node|Logs|YAML Validation>
+
+**Severity:** <Critical|Warning|Info>
+
+**Root cause analysis:**
+<What likely caused this error and why>
+
+**Diagnostic commands:**
+1. <command to verify the diagnosis>
+2. <command to gather more context>
+
+**Remediation steps:**
+1. <specific fix step>
+2. <verification step>
+
+**Prevention:**
+<How to prevent this from recurring>
+```
+
+After analyzing all errors, provide a summary:
+- Total Kubernetes errors analyzed: N
+- By category: Pod Sync (n), CrashLoop (n), Node (n), Logs (n), YAML (n)
+- Critical issues requiring immediate attention: list
+SKILL
+----
+
+=== Verify
+
+Confirm the skill was created:
+
+[source,role="execute"]
+----
+head -5 ~/.claude/commands/sre-kubernetes.md
+----
+
+== Exercise 2: Test against Kubernetes errors
+
+. Run the sre-kubernetes skill against the sample log:
++
+[source,role="execute"]
+----
+claude "/sre-kubernetes diagnose the Kubernetes errors in assets/sample-logs/mixed-errors.log"
+----
+
+. Review the diagnostic output. You should see detailed analysis for:
++
+* **Pod sync error** (line 3): Sandbox creation failure for `web-app-7d4f8b6c9-x2k4m`, container runtime diagnostics
+* **CrashLoopBackOff** (line 6): `nginx` container in `frontend-5f8d9c7b2-km3np` crashing repeatedly, exit code analysis
+* **Pod logs error** (line 9): Can't retrieve logs for `api-gateway-6c8d9f7b3-j2k4m`, pod existence check
+* **Node not found** (line 12): `worker-03` missing from cluster, node registration diagnostics
+* **YAML validation error** (line 15): `port` vs `ports` field typo in Deployment spec, `kubectl explain` guidance
+
+== Exercise 3: Run the full pipeline
+
+Now test the complete classify-then-diagnose workflow:
+
+. Classify all errors first:
++
+[source,role="execute"]
+----
+claude "/error-classifier classify the errors in assets/sample-logs/mixed-errors.log"
+----
+
+. Diagnose just the Kubernetes errors:
++
+[source,role="execute"]
+----
+claude "/sre-kubernetes diagnose only the Kubernetes errors from assets/sample-logs/mixed-errors.log"
+----
+
+. Try combining both skills in a single prompt:
++
+[source,role="execute"]
+----
+claude "Using /error-classifier, classify the errors in assets/sample-logs/mixed-errors.log, then use /sre-kubernetes to diagnose any Kubernetes errors you find"
+----
+
+=== Verify
+
+Check that:
+
+* The classifier correctly identified all 4-5 Kubernetes errors
+* The sre-kubernetes skill provided actionable diagnosis for each
+* Diagnostic commands reference the correct pod names and namespaces from the logs
+* The YAML validation error correctly identifies `port` as the wrong field name
+
+== The completed pipeline
+
+With all three skills built, DevCorp's error triage pipeline is fully operational:
+
+[source]
+----
+Mixed error log
+    │
+    ▼
+error-classifier
+    │
+    ├──→ [LINUX] ──→ sre-linux ──→ Root cause + remediation
+    │                               (SSH, dnf, SELinux, systemd)
+    │
+    ├──→ [ANSIBLE] ──→ (future skill -- same pattern applies)
+    │
+    └──→ [KUBERNETES] ──→ sre-kubernetes ──→ Root cause + remediation
+                                             (pods, nodes, YAML)
+----
+
+Each skill is:
+
+* **Independent** -- works standalone or as part of the pipeline
+* **Portable** -- a markdown file that works anywhere
+* **Maintainable** -- update the knowledge without changing code
+* **Extensible** -- add new error categories by adding new skills
+
+== Module summary
+
+**What you accomplished for DevCorp:**
+
+* Built the `sre-kubernetes` skill to complete the diagnostic layer
+* Tested the full pipeline: classify, route, diagnose
+* Validated that the pattern scales to new domains
+* Proved the pipeline handles real-world error patterns
+
+**Business impact realized:**
+
+* **Complete coverage**: Linux and Kubernetes errors both get expert-level diagnosis
+* **Scalable pattern**: Adding Ansible diagnosis (or any other domain) follows the same blueprint
+* **Pipeline thinking**: Skills compose naturally -- each one does one thing well
+
+**Next steps:**
+
+Module 6 tackles the practical side -- how to distribute skills across teams, manage scope, and leverage the portability that makes skills an open standard.

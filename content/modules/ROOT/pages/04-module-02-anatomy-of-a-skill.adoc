@@ -1,0 +1,232 @@
+= Module 2: Anatomy of a skill
+:source-highlighter: rouge
+:toc: macro
+:toclevels: 1
+
+Before you start building DevCorp's error triage pipeline, you need to understand how skills are constructed. Like any good engineering project, understanding the blueprint comes before building.
+
+In this module, you'll dissect skill files from simple to complex and learn the structure that makes them work across agentic frameworks.
+
+== Learning objectives
+
+By the end of this module, you'll be able to:
+
+* Identify the key parts of a skill file -- frontmatter, triggers, and body
+* Distinguish between simple, intermediate, and complex skill structures
+* Read any skill file and understand what it does and when it activates
+* Plan the structure for your own skills before writing them
+
+== The simplest skill
+
+A skill can be as simple as a single markdown file with plain instructions. No frontmatter, no metadata -- just a description of what the agent should do.
+
+Create a file called `hello.md`:
+
+[source,markdown]
+----
+# Hello Skill
+
+When the user asks you to say hello, respond with a friendly greeting
+that includes the current date and time.
+
+Always mention that you're powered by a skill.
+----
+
+That's it. Place this file in `~/.claude/commands/` and Claude Code can use it. The filename becomes the skill name.
+
+. Create the directory if it doesn't exist:
++
+[source,role="execute"]
+----
+mkdir -p ~/.claude/commands
+----
+
+. Create the simple skill:
++
+[source,role="execute"]
+----
+cat > ~/.claude/commands/hello.md << 'EOF'
+# Hello Skill
+
+When the user asks you to say hello, respond with a friendly greeting
+that includes the current date and time.
+
+Always mention that you're powered by a skill.
+EOF
+----
+
+. Test it with Claude Code:
++
+[source,role="execute"]
+----
+claude "/hello"
+----
+
+=== Verify
+
+You should see Claude respond with a greeting that mentions the date and that it's powered by a skill.
+
+== Adding frontmatter -- the intermediate skill
+
+Frontmatter adds metadata that helps the agent know **when** to use the skill and **how** to configure it. Frontmatter sits at the top of the file between `---` delimiters.
+
+Here's the same skill with frontmatter:
+
+[source,markdown]
+----
+---
+name: hello
+description: Responds with a friendly greeting including the current date and time
+---
+
+# Hello Skill
+
+When the user asks you to say hello, respond with a friendly greeting
+that includes the current date and time.
+
+Always mention that you're powered by a skill.
+----
+
+The key frontmatter fields are:
+
+[cols="1,3",options="header"]
+|===
+|Field |Purpose
+
+|`name`
+|Human-readable skill name
+
+|`description`
+|One-line summary -- used to decide when to activate
+
+|`model`
+|Preferred model (e.g., `claude-sonnet-4-6`)
+
+|`context`
+|Where this skill applies (e.g., `main` for primary conversation)
+|===
+
+== The complex skill -- workflows and references
+
+Complex skills include multi-step workflows, arguments, references to external files, and orchestration of sub-tasks. Here's a simplified example of what a production skill looks like:
+
+[source,markdown]
+----
+---
+name: deploy-review
+description: Review a deployment manifest for security and best practices
+model: claude-opus-4-6
+---
+
+# Deployment Review Skill
+
+Review Kubernetes deployment manifests for security issues and best practices.
+
+## Workflow
+
+### Step 1: Read the manifest
+Read the deployment YAML file provided by the user.
+
+### Step 2: Security checks
+Check for:
+- Running as root (should use non-root user)
+- Missing resource limits
+- Missing security context
+- Privileged containers
+- Host network or PID namespace access
+
+### Step 3: Best practices
+Verify:
+- Readiness and liveness probes defined
+- Image tags are pinned (not :latest)
+- Labels and annotations present
+
+### Step 4: Report
+Provide a structured report with:
+- PASS/FAIL for each check
+- Severity level (critical, warning, info)
+- Suggested fixes for failures
+
+## References
+See @kubernetes/security-best-practices.md for detailed security guidelines.
+----
+
+Notice the progression:
+
+* **Simple**: just instructions
+* **Intermediate**: frontmatter with metadata
+* **Complex**: structured workflow, multiple steps, references to external files
+
+== Exercise 1: Dissect an existing skill
+
+Let's look at a real skill's file structure.
+
+. List the contents of a skill directory to see the typical layout:
++
+[source,role="execute"]
+----
+find ~/.claude/commands/ -name "*.md" -type f 2>/dev/null | head -10 || echo "Create skills in the next module to see the structure"
+----
+
+. If you have skills available, examine one:
++
+[source,role="execute"]
+----
+# Look at the first few lines to see frontmatter
+head -20 ~/.claude/commands/hello.md 2>/dev/null
+----
+
+. Clean up the test skill:
++
+[source,role="execute"]
+----
+rm -f ~/.claude/commands/hello.md
+----
+
+=== Verify
+
+You should be able to identify:
+
+* Whether a skill has frontmatter or not
+* The purpose of each frontmatter field
+* The difference between simple instructions and a structured workflow
+
+== Planning your skills
+
+Before building DevCorp's error triage pipeline, let's plan the structure:
+
+[cols="1,1,1",options="header"]
+|===
+|Skill |Complexity |Purpose
+
+|`error-classifier`
+|Intermediate
+|Read a log file and classify each error as Linux, Ansible, or Kubernetes
+
+|`sre-linux`
+|Complex
+|Deep diagnosis of Linux errors -- SELinux, dnf, systemd, permissions
+
+|`sre-kubernetes`
+|Complex
+|Deep diagnosis of Kubernetes errors -- pod failures, node issues, YAML validation
+|===
+
+Each skill builds on the previous one, and the patterns you learn scale to any domain.
+
+== Module summary
+
+**What you learned:**
+
+* Skill files range from simple markdown instructions to complex multi-step workflows
+* Frontmatter provides metadata for activation, model selection, and scope
+* Complex skills include structured workflows, references, and orchestration patterns
+* The `---` frontmatter delimiter separates metadata from instructions
+
+**Why this matters for DevCorp:**
+
+You now have the blueprint for building your error triage skills. You know what structure each skill needs before writing a single line.
+
+**Next steps:**
+
+Module 3 is where you get hands-on -- you'll build the `error-classifier` skill, the first piece of DevCorp's automated triage pipeline.
