@@ -6,13 +6,11 @@ LAB_PORT="${LAB_PORT:-8080}"
 TTYD_PORT="${TTYD_PORT:-9001}"
 CODE_SERVER_PORT="${CODE_SERVER_PORT:-9002}"
 ANTORA_IMAGE="${ANTORA_IMAGE:-ghcr.io/juliaaano/antora-viewer}"
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-# CONTENT_SOURCE: path to a showroom/antora repo (default: showroom_sample/)
-CONTENT_SOURCE="${CONTENT_SOURCE:-${SCRIPT_DIR}/showroom_sample}"
+REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 ANTORA_PLAYBOOK="${ANTORA_PLAYBOOK:-site.yml}"
-WWW_DIR="${CONTENT_SOURCE}/www"
-PID_DIR="${SCRIPT_DIR}/.pids"
-GENERATED_HTML="${SCRIPT_DIR}/.home-school-ui.html"
+WWW_DIR="${REPO_DIR}/www"
+PID_DIR="${REPO_DIR}/.pids"
+GENERATED_HTML="${REPO_DIR}/.homeroom-ui.html"
 
 # --- Colors ---
 RED='\033[0;31m'
@@ -20,9 +18,9 @@ GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 NC='\033[0m'
 
-info()  { echo -e "${GREEN}[home-school]${NC} $*"; }
-warn()  { echo -e "${YELLOW}[home-school]${NC} $*"; }
-error() { echo -e "${RED}[home-school]${NC} $*" >&2; }
+info()  { echo -e "${GREEN}[homeroom]${NC} $*"; }
+warn()  { echo -e "${YELLOW}[homeroom]${NC} $*"; }
+error() { echo -e "${RED}[homeroom]${NC} $*" >&2; }
 
 # --- Prerequisite checks ---
 check_prereqs() {
@@ -38,7 +36,7 @@ check_prereqs() {
 
     if [[ ${#missing[@]} -gt 0 ]]; then
         error "Missing prerequisites: ${missing[*]}"
-        error "See HOME-SCHOOL.md for installation instructions."
+        error "See HOMEROOM.md for installation instructions."
         exit 1
     fi
 }
@@ -54,44 +52,39 @@ container_cmd() {
 
 # --- Build Antora content ---
 build_content() {
-    if [[ ! -d "${CONTENT_SOURCE}" ]]; then
-        error "Content source not found: ${CONTENT_SOURCE}"
-        error "Set CONTENT_SOURCE to point to your showroom/antora repo."
-        exit 1
-    fi
-
     # Look for site.yml (showroom convention) or antora-playbook.yml
     local playbook=""
-    if [[ -f "${CONTENT_SOURCE}/${ANTORA_PLAYBOOK}" ]]; then
+    if [[ -f "${REPO_DIR}/${ANTORA_PLAYBOOK}" ]]; then
         playbook="${ANTORA_PLAYBOOK}"
-    elif [[ -f "${CONTENT_SOURCE}/antora-playbook.yml" ]]; then
+    elif [[ -f "${REPO_DIR}/antora-playbook.yml" ]]; then
         playbook="antora-playbook.yml"
-    elif [[ -f "${CONTENT_SOURCE}/site.yml" ]]; then
+    elif [[ -f "${REPO_DIR}/site.yml" ]]; then
         playbook="site.yml"
     fi
 
     if [[ -z "${playbook}" ]]; then
-        warn "No Antora playbook found in ${CONTENT_SOURCE} -- skipping build."
+        warn "No Antora playbook found -- skipping build."
+        warn "Add a site.yml or antora-playbook.yml to this repo."
         mkdir -p "${WWW_DIR}"
         if [[ ! -f "${WWW_DIR}/index.html" ]]; then
             cat > "${WWW_DIR}/index.html" <<'PLACEHOLDER'
 <!DOCTYPE html>
-<html><head><title>Home School Lab</title>
+<html><head><title>Homeroom</title>
 <style>body{font-family:system-ui;padding:2rem;color:#333}
 h1{color:#2c5282}code{background:#edf2f7;padding:0.2em 0.4em;border-radius:3px}</style>
 </head><body>
-<h1>Home School Lab</h1>
-<p>No Antora content built yet. Add a <code>site.yml</code> or <code>antora-playbook.yml</code> to your content source.</p>
+<h1>Homeroom</h1>
+<p>No Antora content built yet. Add a <code>site.yml</code> or <code>antora-playbook.yml</code> to this repo.</p>
 </body></html>
 PLACEHOLDER
         fi
         return
     fi
 
-    info "Building Antora content from ${CONTENT_SOURCE}/${playbook}..."
+    info "Building Antora content (${playbook})..."
     local runtime
     runtime=$(container_cmd)
-    ${runtime} run --rm --entrypoint antora -v "${CONTENT_SOURCE}:/antora:Z" "${ANTORA_IMAGE}" "${playbook}"
+    ${runtime} run --rm --entrypoint antora -v "${REPO_DIR}:/antora:Z" "${ANTORA_IMAGE}" "${playbook}"
     info "Antora build complete -> ${WWW_DIR}"
 }
 
@@ -233,7 +226,7 @@ start_services() {
 
     # Start code-server (disable auth for local use)
     info "Starting code-server on port ${CODE_SERVER_PORT}..."
-    code-server --bind-addr "127.0.0.1:${CODE_SERVER_PORT}" --auth none --disable-telemetry "${CONTENT_SOURCE}" &
+    code-server --bind-addr "127.0.0.1:${CODE_SERVER_PORT}" --auth none --disable-telemetry "${REPO_DIR}" &
     echo $! > "${PID_DIR}/code-server.pid"
 
     # Brief pause for services to bind
@@ -351,7 +344,6 @@ usage() {
     echo "  build   Build Antora content only"
     echo ""
     echo "Environment variables:"
-    echo "  CONTENT_SOURCE    Path to showroom/antora repo (default: ./showroom_sample)"
     echo "  ANTORA_PLAYBOOK   Playbook filename (default: site.yml)"
     echo "  LAB_PORT          Main UI port (default: 8080)"
     echo "  TTYD_PORT         Terminal port (default: 9001)"

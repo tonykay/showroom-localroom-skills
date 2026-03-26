@@ -1,4 +1,4 @@
-.home-school-ui.html
-.pids/
-**/www/
 .mcp.json
+**/www/
+**/.homeroom-ui.html
+**/.pids/

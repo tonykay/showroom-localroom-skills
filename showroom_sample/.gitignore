@@ -16,6 +16,10 @@ www/
 *.log
 *.tmp
 
+# Homeroom local dev environment
+.homeroom-ui.html
+.pids/
+
 # Ignore environment-specific files
 .env
 .env.local
