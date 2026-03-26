@@ -22,5 +22,10 @@ ui:
 #       mermaid_initialize_options:
 #         start_on_load: true
 
+antora:
+  extensions:
+    - require: '@antora/lunr-extension'
+      index_by_heading: true
+
 output:
   dir: ./www
