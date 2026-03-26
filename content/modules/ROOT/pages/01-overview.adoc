@@ -1,0 +1,73 @@
+= Workshop overview
+:toc:
+:toc-placement: preamble
+:icons: font
+
+== Your role and mission
+
+You're a senior SRE at DevCorp, and your on-call rotation has become unsustainable. Last night at 3am, the pager fired with a wall of mixed errors -- Linux permission failures, Kubernetes pod crashes, and Ansible deployment failures all tangled together in the same log stream.
+
+Your team lead pulls you aside: "We're spending more time classifying errors than fixing them. Every SRE on the team has their own mental checklist for diagnosing issues, but none of it is written down. When someone's on vacation, we're blind."
+
+**Your assignment**: Build a suite of agent skills that automate error triage -- classifying errors by source, then routing them to specialized diagnostic skills that encode your team's tribal knowledge.
+
+**The objective**: Transform your SRE team's scattered expertise into portable, shareable skills that work across agentic tools -- not just Claude Code.
+
+== Success criteria for your mission
+
+By the end of this workshop, you'll have practical skill-building experience to address DevCorp's triage challenges:
+
+* Understand what agent skills are and how they differ from MCP servers and /slash commands -- **choose the right tool for each job**
+* Read and write skill files with confidence -- **from simple to complex**
+* Build a working `error-classifier` skill -- **automate the first triage step**
+* Build specialized `sre-linux` and `sre-kubernetes` diagnostic skills -- **encode tribal knowledge**
+* Distribute skills across teams and agentic frameworks -- **scale expertise beyond one person**
+
+**Technical outcome**: A working three-skill diagnostic pipeline you can use in production.
+
+**Business benefit**: Faster incident response, reduced mean time to resolution, and institutional knowledge that doesn't walk out the door when someone leaves.
+
+== Target audience
+
+This workshop is designed for:
+
+* Engineers and developers already using Claude Code who want to build custom skills
+* SREs and platform engineers looking to encode diagnostic runbooks
+* Team leads who want to standardize AI-assisted workflows across their organization
+* Anyone curious about the agent skills open standard and its portability
+
+== What you need to succeed
+
+You should have:
+
+* Claude Code installed and configured with an active API key
+* A terminal environment (macOS, Linux, or WSL)
+* Basic familiarity with Claude Code interactions -- you've used it for coding tasks before
+* A text editor for creating skill files
+
+== DevCorp's triage challenges
+
+**The situation**: DevCorp runs a hybrid infrastructure spanning Linux VMs, Kubernetes clusters, and Ansible-managed automation. Error logs from all three systems land in the same stream.
+
+**Current challenges** (operational pain points):
+
+* **Mixed error sources**: Linux, Kubernetes, and Ansible errors interleaved in the same log -- SREs waste time just figuring out what they're looking at
+* **Tribal knowledge silos**: Each SRE has their own mental checklist for diagnosing SELinux denials or CrashLoopBackOff errors -- none of it is documented
+* **Inconsistent triage**: Different team members classify and escalate the same errors differently -- leading to duplicated work and missed patterns
+* **On-call burnout**: Without automated triage, every page requires a senior SRE to manually sift through logs
+
+**The opportunity**: Agent skills can encode your team's diagnostic expertise into portable, testable, shareable automation that works across agentic tools.
+
+== Common questions
+
+**"Do skills only work with Claude Code?"**
+-> No. Skills are an open standard. They work with Claude Agents SDK, LangChain, and other agentic frameworks. Module 6 covers portability in detail.
+
+**"How are skills different from MCP servers?"**
+-> Skills are declarative markdown files with no runtime process. MCP servers are running services that provide bidirectional tool access. Module 1 covers when to use each.
+
+**"Can I share skills with my team?"**
+-> Yes. Skills can live in your personal `~/.claude/` directory, in a repo's `.claude/commands/`, or in a marketplace. Module 6 walks through distribution.
+
+**"Do I need Kubernetes or Ansible installed?"**
+-> No. You'll work with sample error logs -- no live infrastructure required.

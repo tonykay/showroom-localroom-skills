@@ -1,0 +1,158 @@
+= Module 1: What are skills?
+:source-highlighter: rouge
+:toc: macro
+:toclevels: 1
+
+It's 3am and your pager just fired. You open the DevCorp incident channel and see a wall of errors -- Linux permission failures, Kubernetes pod crashes, and Ansible timeout messages all mixed together. You need to triage fast, but right now you're doing it all manually.
+
+What if your AI assistant already knew how to classify and diagnose these errors? That's what skills make possible.
+
+In this module, you'll learn what agent skills are, why they matter as an open standard, and when to use them instead of MCP servers or /slash commands.
+
+== Learning objectives
+
+By the end of this module, you'll be able to:
+
+* Define what an agent skill is and how it works
+* Explain why skills being an open standard matters for portability
+* Distinguish between skills, MCP servers, and /slash commands
+* Apply a "skills first" mindset when solving problems with AI
+
+== What is an agent skill?
+
+A skill is a markdown file that gives an AI agent specialized knowledge and behavior for a specific task. Think of it as a portable, declarative instruction set -- no server, no runtime, no infrastructure required.
+
+At its simplest, a skill is a `.md` file that tells the agent:
+
+* **When** to activate (trigger conditions)
+* **What** to do (step-by-step instructions)
+* **How** to do it well (domain knowledge, examples, constraints)
+
+Skills are an **open standard**. While they originated in the Claude Code ecosystem, they're designed to work across any agentic harness or framework -- Claude Agents SDK, LangChain Deep Agents, and others. Your investment in building a skill is portable.
+
+== The "skills first" mindset
+
+When you need an AI agent to do something specialized, you have several options. The right approach is to think "skills first":
+
+[cols="1,3",options="header"]
+|===
+|Ask yourself |Then use
+
+|"I need the agent to follow a specific procedure or apply domain knowledge"
+|**A skill** -- declarative, portable, no infrastructure
+
+|"I need the agent to interact with a live external service (API, database, tool)"
+|**An MCP server** -- runtime process, bidirectional communication
+
+|"I need a quick repo-scoped shortcut for a common task"
+|**A /slash command** -- simple, scoped to one project
+|===
+
+== Exercise 1: Explore existing skills
+
+Let's see what skills look like in practice.
+
+. Check whether you have any personal skills installed:
++
+[source,role="execute"]
+----
+ls ~/.claude/commands/ 2>/dev/null || echo "No personal skills directory yet"
+----
+
+. Look at Claude Code's built-in example skills:
++
+[source,role="execute"]
+----
+ls ~/.claude/plugins/example-skills/ 2>/dev/null || echo "Check your Claude Code installation for example-skills"
+----
+
+. If you have any skills available, pick one and read it:
++
+[source,role="execute"]
+----
+# Replace with an actual skill path from the listing above
+cat ~/.claude/plugins/example-skills/commit/skill.md 2>/dev/null || echo "Explore any .md file you found above"
+----
+
+Notice the structure -- it's just a markdown file with instructions. No compilation, no deployment, no server process.
+
+=== Verify
+
+You should now be able to answer:
+
+* Where do skills live on your filesystem?
+* What file format are they in?
+* Do they require a running process?
+
+== Skills vs MCP servers vs /slash commands
+
+Here's a deeper comparison to help you choose the right tool:
+
+[cols="1,1,1,1",options="header"]
+|===
+|Characteristic |Skills |MCP servers |/Slash commands
+
+|**Format**
+|Markdown files
+|Running server process
+|Markdown files
+
+|**Infrastructure**
+|None -- just a file
+|Requires a running process
+|None -- just a file
+
+|**Portability**
+|Open standard -- works across frameworks
+|Protocol-specific
+|Tied to Claude Code repo scope
+
+|**Scope**
+|Personal, repo, or marketplace
+|Configured per environment
+|Repo-scoped only
+
+|**Best for**
+|Domain knowledge, procedures, tribal knowledge
+|Live API/tool integration
+|Quick repo-specific shortcuts
+
+|**Activation**
+|Automatic (trigger matching) or manual
+|Tool calls from the agent
+|User types `/command`
+
+|**Complexity**
+|Simple to complex
+|Medium to complex
+|Simple
+|===
+
+TIP: When in doubt, start with a skill. You can always move to an MCP server later if you need live service interaction.
+
+== Why the open standard matters
+
+Skills aren't locked to Claude Code. Because they're markdown-based with a well-defined structure, they can be consumed by:
+
+* **Claude Agents SDK** -- build custom agents that load skills programmatically
+* **LangChain Deep Agents** -- the agent framework ecosystem is adopting skill-compatible formats
+* **Other agentic harnesses** -- any tool that can parse markdown instructions can use skills
+
+This means the `error-classifier` skill you'll build in Module 3 could work in a Claude Code session today and in a custom LangChain agent tomorrow -- without rewriting it.
+
+== Module summary
+
+**What you learned:**
+
+* Agent skills are markdown files that give AI agents specialized capabilities
+* Skills are an open standard -- portable across Claude Code, Claude Agents SDK, LangChain, and other frameworks
+* The "skills first" mindset: reach for a skill before considering heavier alternatives
+* Skills, MCP servers, and /slash commands each have their place -- skills are the lightest and most portable option
+
+**Why this matters for DevCorp:**
+
+Your SRE team's diagnostic knowledge doesn't need to live in someone's head or a wiki that nobody reads. It can be encoded as skills that agents use automatically.
+
+**Next steps:**
+
+Module 2 dives into the anatomy of a skill file -- you'll see exactly how they're structured, from simple to complex.

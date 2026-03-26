@@ -1,0 +1,85 @@
+= Workshop details
+:toc:
+:toc-placement: preamble
+:icons: font
+
+== Timing and schedule
+
+=== Full workshop (90 minutes)
+
+* **Module 1**: What are skills? (10 minutes)
+* **Module 2**: Anatomy of a skill (10 minutes)
+* **Module 3**: Build error-classifier (20 minutes)
+* **Module 4**: Build sre-linux (20 minutes)
+* **Module 5**: Build sre-kubernetes (15 minutes)
+* **Module 6**: Distribution and portability (15 minutes)
+
+=== Quick path (45 minutes)
+
+* **Module 1**: What are skills? (10 minutes)
+* **Module 3**: Build error-classifier (20 minutes)
+* **Module 6**: Distribution and portability (15 minutes)
+
+== Technical requirements
+
+=== Software
+
+* Claude Code (latest version) with an active API key
+* A terminal (macOS Terminal, iTerm2, Linux terminal, or WSL)
+* A text editor (VS Code, Vim, or any editor you prefer)
+* Git (for cloning the workshop repo)
+
+=== Optional -- Localroom
+
+This workshop includes **Localroom**, a browser-based split-pane dev environment.
+To use it, you also need:
+
+* ttyd (`brew install ttyd` on macOS)
+* code-server (`brew install code-server`)
+* Podman or Docker (for building Antora content)
+
+Run `./localroom.sh start` from the repo root to launch it.
+
+=== No external dependencies
+
+* No Kubernetes cluster required
+* No Ansible installation required
+* No cloud accounts needed
+* All exercises use sample error logs provided in the workshop repo
+
+== Environment setup
+
+=== Pre-workshop checklist
+
+* **Claude Code installed** -- Verify with `claude --version`
+* **API key configured** -- Verify with `claude` (should start a session)
+* **Workshop repo cloned** -- Clone this repository locally
+* **Text editor ready** -- Any editor that can create `.md` files
+
+=== Setup validation
+
+Run these commands to verify your setup:
+
+[source,role="execute"]
+----
+# Verify Claude Code
+claude --version
+
+# Verify you can create files in the skills directory
+mkdir -p ~/.claude/commands
+echo "Setup verified" && echo "Ready to build skills"
+----
+
+== Workshop materials
+
+=== Included in this repo
+
+* `assets/sample-logs/mixed-errors.log` -- Mixed error log with Linux, Kubernetes, and Ansible errors for skill testing
+* `examples/` -- Reference skill files and templates
+* `content/` -- These workshop instructions
+
+== Authors and contributors
+
+**Workshop version**: 1.0
+
+**Last updated**: March 2026

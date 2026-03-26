@@ -4,9 +4,9 @@
 
 - [x] index.adoc -- learner landing page
 - [x] assets/sample-logs/mixed-errors.log -- sample error data for exercises
-- [ ] 01-overview.adoc -- business scenario and learning objectives
-- [ ] 02-details.adoc -- technical requirements and setup
-- [ ] 03-module-01-what-are-skills.adoc
+- [x] 01-overview.adoc -- business scenario and learning objectives
+- [x] 02-details.adoc -- technical requirements and setup
+- [x] 03-module-01-what-are-skills.adoc
 - [ ] 04-module-02-anatomy-of-a-skill.adoc
 - [ ] 05-module-03-build-error-classifier.adoc
 - [ ] 06-module-04-build-sre-linux.adoc
