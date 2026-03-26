@@ -10,7 +10,7 @@ REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
 ANTORA_PLAYBOOK="${ANTORA_PLAYBOOK:-site.yml}"
 WWW_DIR="${REPO_DIR}/www"
 PID_DIR="${REPO_DIR}/.pids"
-GENERATED_HTML="${REPO_DIR}/.homeroom-ui.html"
+GENERATED_HTML="${REPO_DIR}/.localroom-ui.html"
 
 # --- Colors ---
 RED='\033[0;31m'
@@ -18,9 +18,9 @@ GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 NC='\033[0m'
 
-info()  { echo -e "${GREEN}[homeroom]${NC} $*"; }
-warn()  { echo -e "${YELLOW}[homeroom]${NC} $*"; }
-error() { echo -e "${RED}[homeroom]${NC} $*" >&2; }
+info()  { echo -e "${GREEN}[localroom]${NC} $*"; }
+warn()  { echo -e "${YELLOW}[localroom]${NC} $*"; }
+error() { echo -e "${RED}[localroom]${NC} $*" >&2; }
 
 # --- Prerequisite checks ---
 check_prereqs() {
@@ -36,7 +36,7 @@ check_prereqs() {
 
     if [[ ${#missing[@]} -gt 0 ]]; then
         error "Missing prerequisites: ${missing[*]}"
-        error "See HOMEROOM.md for installation instructions."
+        error "See LOCALROOM.md for installation instructions."
         exit 1
     fi
 }
@@ -69,11 +69,11 @@ build_content() {
         if [[ ! -f "${WWW_DIR}/index.html" ]]; then
             cat > "${WWW_DIR}/index.html" <<'PLACEHOLDER'
 <!DOCTYPE html>
-<html><head><title>Homeroom</title>
+<html><head><title>Localroom</title>
 <style>body{font-family:system-ui;padding:2rem;color:#333}
 h1{color:#2c5282}code{background:#edf2f7;padding:0.2em 0.4em;border-radius:3px}</style>
 </head><body>
-<h1>Homeroom</h1>
+<h1>Localroom</h1>
 <p>No Antora content built yet. Add a <code>site.yml</code> or <code>antora-playbook.yml</code> to this repo.</p>
 </body></html>
 PLACEHOLDER
@@ -96,7 +96,7 @@ generate_ui() {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Home School Lab</title>
+<title>Localroom</title>
 <style>
   * { box-sizing: border-box; height: 100%; }
   body { margin: 0; height: 100%; }

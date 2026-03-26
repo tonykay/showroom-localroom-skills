@@ -1,10 +1,10 @@
-# Homeroom - Local Showroom Dev Environment
+# Localroom - Local Showroom Dev Environment
 
 A single-script local dev environment for showroom content authors. Builds your Antora content and serves it in a split-pane browser UI alongside a terminal and code editor -- just like the deployed showroom experience.
 
 ## How It Works
 
-`homeroom.sh` lives inside your showroom repo and orchestrates three services:
+`localroom.sh` lives inside your showroom repo and orchestrates three services:
 
 1. **Build** -- Runs the Antora container to generate static HTML from `site.yml` (or `antora-playbook.yml`)
 2. **ttyd** -- Browser-based terminal (zsh) on port 9001
@@ -30,13 +30,13 @@ From your showroom repo root:
 
 ```bash
 # Start everything (build + services + UI)
-./homeroom.sh start
+./localroom.sh start
 
 # Stop all services
-./homeroom.sh stop
+./localroom.sh stop
 
 # Rebuild Antora content only
-./homeroom.sh build
+./localroom.sh build
 ```
 
 Then open http://localhost:8080 in your browser.
@@ -52,7 +52,7 @@ Then open http://localhost:8080 in your browser.
 Example with custom ports:
 
 ```bash
-LAB_PORT=3000 TTYD_PORT=3001 CODE_SERVER_PORT=3002 ./homeroom.sh start
+LAB_PORT=3000 TTYD_PORT=3001 CODE_SERVER_PORT=3002 ./localroom.sh start
 ```
 
 ## Antora Build
@@ -60,24 +60,24 @@ LAB_PORT=3000 TTYD_PORT=3001 CODE_SERVER_PORT=3002 ./homeroom.sh start
 The script auto-detects `site.yml` or `antora-playbook.yml`. Output goes to `./www/` (gitignored). Override the playbook filename:
 
 ```bash
-ANTORA_PLAYBOOK=custom-site.yml ./homeroom.sh start
+ANTORA_PLAYBOOK=custom-site.yml ./localroom.sh start
 ```
 
 The default image (`ghcr.io/juliaaano/antora-viewer`) bundles the mermaid extension used by showroom repos. Override with:
 
 ```bash
-ANTORA_IMAGE=docker.io/antora/antora ./homeroom.sh start
+ANTORA_IMAGE=docker.io/antora/antora ./localroom.sh start
 ```
 
-## Adding Homeroom to Your Showroom Repo
+## Adding Localroom to Your Showroom Repo
 
-Copy `homeroom.sh` and `HOMEROOM.md` into your showroom repo root. Add to `.gitignore`:
+Copy `localroom.sh` and `LOCALROOM.md` into your showroom repo root. Add to `.gitignore`:
 
 ```
-.homeroom-ui.html
+.localroom-ui.html
 .pids/
 ```
 
 ## Stopping Services
 
-`Ctrl+C` during `./homeroom.sh start` stops everything cleanly. Or from another terminal: `./homeroom.sh stop`
+`Ctrl+C` during `./localroom.sh start` stops everything cleanly. Or from another terminal: `./localroom.sh stop`

@@ -5,6 +5,7 @@ A template for creating Red Hat Showroom lab guides and demo content, built with
 * 0% cruft
 * Red Hat Demo Platform UI Bundle default
 * Dev Mode extension that displays the asciidoc attributes you have to work with
+* **Localroom** -- full local dev environment with split-pane UI, browser terminal, and code editor (see <<localroom>>)
 
 == Documentation
 
@@ -26,6 +27,18 @@ On SELinux systems, append `:z` to the volume mount.
 
 . Edit content in `content/modules/ROOT/pages/`
 . See the https://rhpds.github.io/showroom_template_nookbag/modules/content-repo.html[Content Repository] docs for directory layout, Podman Compose with live reload, dev mode, and more.
+
+[[localroom]]
+== Localroom -- Local Dev Environment
+
+Localroom gives you the full showroom split-pane experience on your local machine: lab content on the left, a browser-based terminal and code editor on the right.
+
+[source,sh]
+----
+./localroom.sh start
+----
+
+Then open http://localhost:8080. Requires `ttyd`, `code-server`, and Podman/Docker. See link:LOCALROOM.md[LOCALROOM.md] for full details and prerequisites.
 
 == Create Content with AI
 

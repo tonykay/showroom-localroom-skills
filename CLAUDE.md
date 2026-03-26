@@ -4,11 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Home-school develops "homeroom" -- a local dev environment for showroom content authors. It provides a split-pane browser UI with lab content on the left and tabbed terminal/editor on the right, replicating the deployed showroom experience locally.
+Home-school develops "localroom" -- a local dev environment for showroom content authors. It provides a split-pane browser UI with lab content on the left and tabbed terminal/editor on the right, replicating the deployed showroom experience locally.
 
 ## Architecture
 
-- **homeroom.sh** lives inside each showroom repo (see `showroom_sample/homeroom.sh`) -- it builds Antora content, starts ttyd + code-server, and serves a Split.js-based split-pane UI
+- **localroom.sh** lives inside each showroom repo (see `showroom_sample/localroom.sh`) -- it builds Antora content, starts ttyd + code-server, and serves a Split.js-based split-pane UI
 - **showroom_sample/** -- a clone of `rhpds/showroom_template_nookbag` used as the test showroom repo
 - Uses `ghcr.io/juliaaano/antora-viewer` image with entrypoint override for builds (bundles mermaid extension)
 - Auto-detects `site.yml` or `antora-playbook.yml`
@@ -18,9 +18,9 @@ Home-school develops "homeroom" -- a local dev environment for showroom content 
 
 ```bash
 # From inside the showroom repo (showroom_sample/):
-./homeroom.sh start    # Build + start all services
-./homeroom.sh stop     # Stop all services
-./homeroom.sh build    # Rebuild Antora content only
+./localroom.sh start    # Build + start all services
+./localroom.sh stop     # Stop all services
+./localroom.sh build    # Rebuild Antora content only
 ```
 
 ## Service Ports (defaults)

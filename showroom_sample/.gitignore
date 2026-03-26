@@ -17,7 +17,7 @@ www/
 *.tmp
 
 # Homeroom local dev environment
-.homeroom-ui.html
+.localroom-ui.html
 .pids/
 
 # Ignore environment-specific files
